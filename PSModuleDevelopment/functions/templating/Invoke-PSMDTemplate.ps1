@@ -140,6 +140,57 @@
 			return
 		}
 		
+        # Import context aware configuration parameters by processing PSMDConfig.ps1 in all parent directories 
+        # all the way to the top from current directory. The config file in the current directory have precedens over config files 
+        # further up the tree. Each config file have a dictionary defined that stores key value pairs.
+        #Example: 
+        #   Top Directory: PSMDConfig.ps1:
+        #   $PSMDConfig = @{
+        #       "Author" = "Ola Hansen"
+        #       "Company" = "work.com"
+        #   }
+        #   Parent Directory: PSMDConfig.ps1:
+        #   $PSMDConfig = @{
+        #       "Company" = "customer.com"
+        #       "NameSpace" = "App1"
+        #   }
+        #   Current Directory: PSMDConfig.ps1:
+        #   $PSMDConfig = @{            
+        #       "NameSpace" = "App1.Library"
+        #   }
+        #   Resultant config for current directory after processing the PSMDConfig.ps1 files further up:
+        #   $PSMDConfig = @{
+        #       "Author" = "Ola Hansen"
+        #       "Company" = "customer.com"
+        #       "NameSpace" = "App1.Library"
+        #   }
+        #  The resultant config will be will be added to 'Template.ParameterDefault.*' with the Set-PSFConfig command.
+        function Get-ParentDirectory
+        {
+            param(
+                [System.IO.DirectoryInfo]
+                $Directory
+            )
+            if($null -ne $Directory.Parent)
+            {
+                Write-Output -InputObject $Directory.FullName
+                Get-ParentDirectory -Directory $($Directory.Parent)
+            }
+        }        
+        $currentDirectory = [System.IO.DirectoryInfo]::new((Get-Location).Path)
+        Get-ParentDirectory -Directory $currentDirectory | Sort-Object | ForEach-Object{
+            $folderPath = $_
+            $psmdConfigPath = [System.IO.Path]::Combine($folderPath,"PSMDConfig.ps1")
+            $psmdConfigPath
+        } | Where-Object { Test-Path -Path $_} | Foreach-Object {
+            $psmdConfigPath = $_
+            . $psmdConfigPath 
+            #$PSMDConfig variable is now set, run through it and overwrite coresponding values in Template.ParameterDefault.*
+            foreach ($key in $PSMDConfig.Keys) {                
+                Set-PSFConfig -Module 'PSModuleDevelopment' -Name "Template.ParameterDefault.$($key)" -Value $($PSMDConfig[$key])
+            }
+        }
+
 		#region Parameter Processing
 		if (-not $Parameters) { $Parameters = @{ } }
 		if ($Name) { $Parameters["Name"] = $Name }
