@@ -72,7 +72,7 @@ function Add-PsmdFsFileToFsProject {
             if($allreadyExists -eq $false)
             {
                 #Fs file is not allready added, so add it.
-                Write-Host "Adding file '$FsFilePath' to project '$FsProjectPath'." -ForegroundColor Yellow
+                Write-Host "Adding file '$FsFilePath' to project '$FsProjectPath'." -ForegroundColor Green
                 [System.Xml.XmlNode]$compileElement = $fsprojXmlDoc.CreateElement("Compile")
                 ($compileElement.SetAttribute("Include",$fsFilePathRelativePath)) | Out-Null
                 [System.Xml.XmlNode]$parentNode = $itemGroups[0].ParentNode
