@@ -390,6 +390,18 @@
 						}
 					}
 					[System.IO.File]::WriteAllText($destPath, $text, $Encoding)
+
+                    #If destination path is a *.fs file it should to be included in a F# project in the current directory
+                    #or some parent directory futher up. Look for the neares .*fsproj file and add the file to the project.
+                    if($destPath.EndsWith(".fs"))
+                    {
+                        #Destination is a F# source file. Find the parent project(s) and add.
+                        $destinationFile = [System.IO.FileInfo]::new($destPath)
+                        Find-PsmdFsProject -FolderPath $($destinationFile.Directory.FullName) | ForEach-Object {
+                            $fsProjectFilePath = $_
+                            Add-PSMDFsFileToFsProject -FsFilePath $destPath -FsProjectPath $fsProjectFilePath
+                        }
+                    }
 				}
 				else {
 					$bytes = [System.Convert]::FromBase64String($Item.Value)
