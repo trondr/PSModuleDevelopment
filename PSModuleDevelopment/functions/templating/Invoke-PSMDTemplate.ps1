@@ -171,9 +171,9 @@
                 [System.IO.DirectoryInfo]
                 $Directory
             )
+            Write-Output -InputObject $Directory.FullName
             if($null -ne $Directory.Parent)
-            {
-                Write-Output -InputObject $Directory.FullName
+            {             
                 Get-ParentDirectory -Directory $($Directory.Parent)
             }
         }        
